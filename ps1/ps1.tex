@@ -76,12 +76,12 @@ Let $Z = \sum_{i=1}^n\exp(x_i)$, the derivative
 When using backpropagation to compute $\nabla x_i$, we know $\nabla x_i =
 \sum_{i=k}^n \nabla y_k \frac{\partial y_k}{\partial x_i}$, thus
 \begin{align*}
-\nabla X = T\nabla Y
+\nabla X = J\nabla Y
 \end{align*}
-where $T_{ij} = \frac{\partial y_j}{\partial x_i}$.
+where $J_{ij} = \frac{\partial y_j}{\partial x_i}$.
 
 \begin{align*}
-T\nabla Y &= \left(\left[ 
+J\nabla Y &= \left(\left[ 
 \begin{array}{cccc}
 y_1 & & & \\
  &y_2 & &\\
