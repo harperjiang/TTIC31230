@@ -1,0 +1,108 @@
+%%This is a very basic article template.
+%%There is just one section and two subsections.
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{parskip}
+\usepackage{xcolor}
+
+\setlength{\parskip}{0cm}
+
+\title{TTIC 31230 Problem Set 1 \\ Win 2017}
+
+\author{Hao Jiang}
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+\subsection*{a}
+Using chain rule, we have
+\begin{align*}
+\frac{\partial \ell}{\partial x} = \frac{\partial \ell}{\partial
+g}\frac{\partial g}{\partial x} +\frac{\partial \ell}{\partial h}\frac{\partial
+h}{\partial x}
+\end{align*}
+
+Using backpropagation, we first compute the result for the hidden layer (the
+layer of $y$ and $z$), having the value of $\delta_y = \frac{\partial
+\ell}{\partial y}$ and $\delta_z = \frac{\partial \ell}{\partial z}$.
+and for the input layer,
+\begin{align*}
+\frac{\partial \ell}{\partial x} &= g'(y)\delta_y + h'(z)\delta_z\\
+&= \frac{\partial \ell}{\partial
+g}\frac{\partial g}{\partial x} +\frac{\partial \ell}{\partial h}\frac{\partial
+h}{\partial x}
+\end{align*}
+This result is equal to the result from chain rule and shows that
+backpropagation correctly compute the derivative.
+\subsection*{b}
+
+For second derivative
+\begin{align*}
+\frac{\partial^2 \ell}{\partial x^2} &= 
+\frac{\partial}{\partial x}(\frac{\partial \ell}{\partial g}\frac{\partial g}{\partial x} +\frac{\partial \ell}{\partial h}\frac{\partial
+h}{\partial x}) \\
+&= \frac{\partial^2 \ell}{\partial g^2}\left(\frac{\partial g}{\partial
+x}\right)^2 +\frac{\partial \ell}{\partial g}\frac{\partial^2 g}{\partial x^2}
++\frac{\partial^2 \ell}{\partial h^2}\left(\frac{\partial h}{\partial
+x}\right)^2 +\frac{\partial \ell}{\partial h}\frac{\partial^2 h}{\partial x^2}
+\end{align*}
+
+This is not equivalent to the backpropagation result
+\begin{align*}
+\frac{\partial^2 \ell}{\partial g^2}\frac{\partial^2 g}{\partial x^2} +
+\frac{\partial^2 \ell}{\partial h^2}\frac{\partial^2 h}{\partial x^2}
+\end{align*}
+\section*{Problem 2}
+Softmax function
+\begin{align*}
+Y = [y_1,y_2,\ldots,y_n] &= S([x_1,x_2,\ldots,x_n]) = S(X)\\
+&= \frac{1}{\sum_{i=1}^n
+\exp(x_i)}[\exp(x_1),\exp(x_2),\ldots,\exp(x_n)]
+\end{align*}
+Let $Z = \sum_{i=1}^n\exp(x_i)$, the derivative
+\begin{align*}
+\frac{\partial y_j}{\partial x_i} =
+\left\{
+\begin{array}{cc}
+\frac{\exp(x_j)}{Z}-\frac{(\exp^2(x_j)}{Z^2} = y_i(1-y_i) & i = j \\
+-\frac{\exp(x_i)\exp(x_j)}{Z^2} = -y_iy_j & i \neq j \\
+\end{array}
+\right.
+\end{align*}
+
+When using backpropagation to compute $\nabla x_i$, we know $\nabla x_i =
+\sum_{i=k}^n \nabla y_k \frac{\partial y_k}{\partial x_i}$, thus
+\begin{align*}
+\nabla X = T\nabla Y
+\end{align*}
+where $T_{ij} = \frac{\partial y_j}{\partial x_i}$.
+
+\begin{align*}
+T\nabla Y &= \left(\left[ 
+\begin{array}{cccc}
+y_1 & & & \\
+ &y_2 & &\\
+& & \ddots & \\
+& & & y_n\\
+\end{array}
+\right] - YY^T\right)\nabla Y \\
+&= \left[\begin{array}{c}y_1\nabla y_1\\y_2\nabla
+y_2\\\vdots\\y_n\nabla y_n\end{array}\right] - YY^T\nabla Y\\
+&= \left[\begin{array}{c}y_1\nabla y_1\\y_2\nabla
+y_2\\\vdots\\y_n\nabla y_n\end{array}\right] - \texttt{gvdot}*Y\\
+&=\left[\begin{array}{c}y_1(\nabla y_1 - \texttt{gvdot})\\y_2(\nabla
+y_2-\texttt{gvdot})\\\vdots\\y_n(\nabla
+y_n-\texttt{gvdot})\end{array}\right]\\
+\end{align*}
+
+This is an element-wise multiplication of $Y$ and $(\nabla Y - \texttt{gvdot})$.
+
+In the EDF implementation, \texttt{self.value *
+(self.grad - gvdot)} is wrong. The correct code should be
+\texttt{np.multiply(self.value, self.grad - gvdot)}
+
+\section*{Problem 3}
+\end{document}
