@@ -98,11 +98,8 @@ y_2-\texttt{gvdot})\\\vdots\\y_n(\nabla
 y_n-\texttt{gvdot})\end{array}\right]\\
 \end{align*}
 
-This is an element-wise multiplication of $Y$ and $(\nabla Y - \texttt{gvdot})$.
-
-In the EDF implementation, \texttt{self.value *
-(self.grad - gvdot)} is wrong. The correct code should be
-\texttt{np.multiply(self.value, self.grad - gvdot)}
+This is an element-wise multiplication of $Y$ and $(\nabla Y - \texttt{gvdot})$,
+and demonstrate the correctness of Softmax in edf.
 
 \section*{Problem 3}
 \end{document}
