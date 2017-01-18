@@ -5,6 +5,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{parskip}
+\usepackage{cleveref}
 \usepackage{xcolor} 
 
 \setlength{\parskip}{0cm} 
@@ -23,8 +24,63 @@ slides,
 ||\nabla_w\ell_{\text{train}}(w) - \nabla_w \ell_{\text{generalize}}(w)|| \leq
 \frac{b(1+\sqrt(2ln(1/\delta)))}{\sqrt{N}}
 \end{align*}
+with probability $1-\delta$
 \section*{Problem 2}
-See the attached jupyter notebook for \texttt{a,b,c}
+\subsection*{a}
+The experiment result is shown in \Cref{tab:2a}. The following things can be
+observed.
+\begin{itemize}
+  \item When batch size is small (10), large learning rate (0.37) tends
+  to increase training loss
+  \item When batch size is large (100), larger learnining rate ($\eta^*$)
+  reduces training loss
+  \item For the same step size, larger batch size has a smaller training loss
+\end{itemize}
 
-\subsection{d}
+\begin{table}
+\centering
+\begin{tabular}{c|c|c}
+\texttt{Setting} & \texttt{Training Loss} & \texttt{Test Accuracy} \\
+\hline
+B = 10, $\eta = \eta^*(B)$ & 0.0094 & 0.9965 \\
+\hline
+B = 10, $\eta = 0.37$ & 0.1013 & 0.9787\\
+\hline
+B = 100, $\eta = \eta^*(B)$ & 0.0107& 0.9977\\
+\hline
+B = 100, $\eta = 0.37$ & 0.0223 & 0.9940\\
+\end{tabular}
+\caption{Experiment Result for Problem 2a}
+\label{tab:2a}
+\end{table}
+
+\textbf{Conclusion}: Optimal learning rate varies with batch size and there
+seems no simple rule that determines a best learning rate given a batch size.
+\subsection*{b}
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|c}
+\texttt{Setting} & \texttt{Training Loss} & \texttt{Test Accuracy} \\
+\hline
+B = 50, $\eta = 0.37$ & 0.0101 & 0.9969 \\
+\hline
+B = 50, $\eta = \eta^*$ & 0.0098& 0.9968\\
+\hline
+B = 10, $\eta = 0.37$ & 0.0756 &  0.9799\\
+\hline
+B = 10, $\eta = \eta^*$ & 0.0076& 0.9970\\
+\hline
+B = 100, $\eta = 0.37$ & 0.0200 & 0.9950 \\
+\hline
+B = 100, $\eta = \eta^*$ & 0.0108& 0.9965\\
+\end{tabular}
+\caption{Experiment Result for Problem 2b}
+\label{tab:2b}
+\end{table}
+
+\subsection*{c}
+
+\subsection*{d}
+Most important thing is training speed. Smaller batch size is much much slower
 \end{document}
