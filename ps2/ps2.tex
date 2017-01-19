@@ -8,7 +8,7 @@
 \usepackage{cleveref}
 \usepackage{xcolor} 
 
-\setlength{\parskip}{0cm} 
+\setlength{\parskip}{0.2cm}
 
 \title{TTIC 31230 Problem Set 2 \\ Win 2017}
 
@@ -27,14 +27,13 @@ slides,
 with probability $1-\delta$
 \section*{Problem 2}
 \subsection*{a}
-The experiment result is shown in \Cref{tab:2a}. The following things can be
+The experiment result of 2a is shown in \Cref{tab:2a}. The following things can be
 observed.
 \begin{itemize}
-  \item When batch size is small (10), large learning rate (0.37) tends
-  to increase training loss
-  \item When batch size is large (100), larger learnining rate ($\eta^*$)
-  reduces training loss
-  \item For the same step size, larger batch size has a smaller training loss
+  \item The provided optimal learning rate $\eta^*$ yields a better test 
+  accuracy on batch size 10 and 100, but not on batch size 50.
+  \item For the same learning rate(0.37), larger batch size does not always yield
+  better performance result
 \end{itemize}
 
 \begin{table}
@@ -42,36 +41,48 @@ observed.
 \begin{tabular}{c|c|c}
 \texttt{Setting} & \texttt{Training Loss} & \texttt{Test Accuracy} \\
 \hline
-B = 10, $\eta = \eta^*(B)$ & 0.0094 & 0.9965 \\
+B = 10, $\eta = \eta^*(B)$ & 0.0099 & 0.9969 \\
 \hline
-B = 10, $\eta = 0.37$ & 0.1013 & 0.9787\\
+B = 10, $\eta = 0.37$ & 0.0817 & 0.9780\\
 \hline
-B = 100, $\eta = \eta^*(B)$ & 0.0107& 0.9977\\
+B = 50, $\eta = \eta^*(B)$ & 0.0097 & 0.9976 \\
 \hline
-B = 100, $\eta = 0.37$ & 0.0223 & 0.9940\\
+B = 50, $\eta = 0.37$ & 0.0086 & 0.9980 \\
+\hline
+B = 100, $\eta = \eta^*(B)$ & 0.0110& 0.9977\\
+\hline
+B = 100, $\eta = 0.37$ & 0.0213 & 0.9935\\
 \end{tabular}
 \caption{Experiment Result for Problem 2a}
 \label{tab:2a}
 \end{table}
 
-\textbf{Conclusion}: Optimal learning rate varies with batch size and there
-seems no simple rule that determines a best learning rate given a batch size.
-\subsection*{b}
+\textbf{Conclusion}: There is no single best learning rate for different 
+batch sizes. The learning rate should be setup as a function relying on batch
+size to provide best performance.
 
+\subsection*{b}
+The experiment result of 2b is demonstrated in \Cref{tab:2b}. In the case of
+momentum, $\eta^*$ does always yield a better result. When batch size is small,
+the difference is more obvious. When batch size is larger, the difference become
+less.
+
+Similar to what is observed in standard SGD, for the given constant learning rate
+$\eta= 0.37$, batch size 50 gives the best performance.
 \begin{table}
 \centering
 \begin{tabular}{c|c|c}
 \texttt{Setting} & \texttt{Training Loss} & \texttt{Test Accuracy} \\
 \hline
-B = 50, $\eta = 0.37$ & 0.0101 & 0.9969 \\
-\hline
-B = 50, $\eta = \eta^*$ & 0.0098& 0.9968\\
-\hline
-B = 10, $\eta = 0.37$ & 0.0756 &  0.9799\\
+B = 10, $\eta = 0.37$ & 0.1193 & 0.9745\\
 \hline
 B = 10, $\eta = \eta^*$ & 0.0076& 0.9970\\
 \hline
-B = 100, $\eta = 0.37$ & 0.0200 & 0.9950 \\
+B = 50, $\eta = 0.37$ & 0.0098 & 0.9970 \\
+\hline
+B = 50, $\eta = \eta^*$ & 0.0097& 0.9975\\
+\hline
+B = 100, $\eta = 0.37$ & 0.0199 & 0.9947 \\
 \hline
 B = 100, $\eta = \eta^*$ & 0.0108& 0.9965\\
 \end{tabular}
@@ -80,7 +91,78 @@ B = 100, $\eta = \eta^*$ & 0.0108& 0.9965\\
 \end{table}
 
 \subsection*{c}
+The result of Adam algorithm is demonstrated in \Cref{tab:2c}.
+
+For batch size 50, minimal train loss and test accuracy can be 
+obtained around $\eta = 0.0016$.
+
+For batch size 100, the minimal training loss appears at $\eta = 0.0015$,
+but the highest test accuracy appears at $\eta = 0.0014$
+
+For batch size 10, the minimal training loss appears at $\eta = 0.0014$, 
+and the highest test accuracy appears at $\eta = 0.00145$
+
+In addition, it can also be noticed that a smaller batch size tends
+to yield a higher training loss and lower test accuracy.
+\begin{table} 
+\centering
+\begin{tabular}{c|c|c}
+\texttt{Setting} & \texttt{Training Loss} & \texttt{Test Accuracy} \\
+\hline
+B = 50, $\eta = 0.0014$ & 0.0110 & 0.9974\\
+\hline
+B = 50, $\eta = 0.0015$ & 0.0099 & 0.9973\\
+\hline
+B = 50, $\eta = 0.0016$ & 0.0088 & 0.9979\\
+\hline
+B = 50, $\eta = 0.0017$ & 0.0090 & 0.9973\\
+\hline
+B = 100, $\eta = 0.0013$ & 0.0116 & 0.9972\\
+\hline
+B = 100, $\eta = 0.00135$ & 0.0104 & 0.9976\\
+\hline
+B = 100, $\eta = 0.0014$ & 0.0093 & 0.9979\\
+\hline
+B = 100, $\eta = 0.00145$ & 0.0096 & 0.9978\\
+\hline
+B = 100, $\eta = 0.0015$ & 0.0089 & 0.9978\\
+\hline
+B = 100, $\eta = 0.0016$ & 0.0100 & 0.9975\\ 
+\hline
+B = 10, $\eta = 0.0013$ & 0.0223& 0.9925\\
+\hline
+B = 10, $\eta = 0.00135$ & 0.0136& 0.9946\\
+\hline
+B = 10, $\eta = 0.00138$ & 0.0190& 0.9938\\
+\hline
+B = 10, $\eta = 0.0014$ & 0.0124& 0.9946\\
+\hline
+B = 10, $\eta = 0.00145$ & 0.0143 & 0.9955 \\
+\hline
+B = 10, $\eta = 0.0015$ & 0.0191& 0.9937\\
+\hline
+B = 10, $\eta = 0.0016$ & 0.0229 & 0.9918\\ 
+\end{tabular}
+\caption{Experiment Result for Problem 2c}
+\label{tab:2c}
+\end{table}
 
 \subsection*{d}
-Most important thing is training speed. Smaller batch size is much much slower
+One of the most obvious observation is the relationship between batch size and
+running time. The running time will in general decrease when the batch size 
+increase. However, the decrease rate will become slower when batch size is too
+large. When computation is applied to a larger batch group, the efficiency of 
+numpy's vector operations will save some time, but the average result need to be
+computed on a larger group. Thus there should exist an optimal batch size for 
+specific given problem.
+
+Also, as mentioned in previous section, a smaller batch size tends to lead to 
+both a larger training loss and a smaller test accuracy. This is possibly because
+in a smaller batch group, outliers can have large impact to the average gradient
+and lead to inaccurate result.
+
+Finally, larger training loss in general yield to a worse test accuracy. But a
+smaller training loss does not always means a higher test accuracy. This is due to
+the skew in the sampling process when choosing training set and test set from the
+distribution that includes all data.
 \end{document}
