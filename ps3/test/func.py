@@ -25,19 +25,19 @@ class Conv:
 
     ####################### Please implement this function####################### 
     def forward(self):
-        inshape = self.k.shape
-        if self.value is None:
-            owsize = np.ceil((inshape[1] - self.f.shape[0] + 1) / self.stride)
-            ohsize = np.ceil((inshape[2] - self.f.shape[0] + 1) / self.stride)
-            self.value = np.ndarray([inshape[0], owsize, ohsize, inshape[3]],
-                                    np.dtype(np.float64))
+        xshape = self.k.shape
+        fshape = self.f.shape
+        owsize = np.ceil((xshape[1] - fshape[0] + 1) / self.stride)
+        ohsize = np.ceil((xshape[2] - fshape[0] + 1) / self.stride)
+        self.value = np.ndarray([xshape[0], owsize, ohsize, fshape[2]], np.dtype(np.float64))
         
-        # padding
-        padded = np.ndarray([inshape[0], inshape[1] + 2 * self.pad, inshape[2] + 2 * self.pad, inshape[3]])
-        padded.fill(0)
-        padded[:, self.pad: inshape[1] + self.pad , self.pad : inshape[2] + self.pad , :] = self.k.value
         yshape = self.value.shape
-        ksize = self.f.shape[0]
+        # padding
+        padded = np.ndarray([xshape[0], xshape[1] + 2 * self.xpad, xshape[2] + 2 * self.ypad, xshape[3]])
+        padded.fill(0)
+        padded[:, self.xpad: xshape[1] + self.xpad , self.ypad : xshape[2] + self.ypad , :] = self.k.value
+        
+        ksize = fshape[0]
         for bi in range(yshape[0]):
             for ci in range(yshape[3]):
                 for wi in range(yshape[1]):
