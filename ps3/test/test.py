@@ -249,13 +249,116 @@ class TestConv(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testPadding(self):
+        x = type('', (), {})()
+        x.value = np.ndarray([1, 10, 10, 1])
+        x.grad = x.value
+        f = type('', (), {})()
+        f.value = np.ndarray([1, 1, 1, 1])
+        f.grad = f.value
+        
+        # xpad = ypad = 5
+        conv = Conv(f, x, 1, 5)
+        conv.forward()
+        
+        self.assertEqual((1, 20, 20, 1), conv.value.shape)
+        
+        # xpad = 6, ypad = 8
+        conv2 = Conv(f, x, 1, [8, 6])
+        conv2.forward()
+        
+        self.assertEqual((1, 22, 26, 1), conv2.value.shape)
+        
+    def testForwardShape(self):
+        x = type('', (), {})()
+        x.value = np.ndarray([3, 10, 10, 4])
+        x.grad = x.value
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 4, 6])
+        f.grad = f.value
+        
+        conv = Conv(f, x, 2, 0)
+        conv.forward()
+        self.assertEqual((3, 5, 4, 6), conv.value.shape)
 
-    def testForward(self):
-        self.fail("Not implemented")
+    def testForward1(self):
+        x = type('', (), {})()
+        x.value = np.ndarray([3, 5, 6, 2])
+        x.value.fill(0)
+        x.value[0, :, :, 0] = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30]]
+        x.value[0, :, :, 1] = [[1, 2, 3, 3, 2, 1], [1, 1, 2, 2, 1, 1], [1, 1, 1, 1, 1, 1], [1, 2, 3, 3, 2, 1], [1, 1, 2, 2, 1, 1]]
+        
+        x.grad = x.value
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 2, 1])
+        f.value[:, :, 0, 0] = [[-1, 2, -1], [-1, 2, -1]]
+        f.value[:, :, 1, 0] = [[1, 0, -1], [1, 0, -1]]
+        f.grad = f.value
+        
+        conv = Conv(f, x, 2, 0)
+        conv.forward()
+        self.assertEqual((3, 2, 2, 1), conv.value.shape)
+        
+        self.assertEqual(edf.DT(-3), conv.value[0, 0, 0, 0])
+        self.assertEqual(edf.DT(2), conv.value[0, 0, 1, 0])
+        self.assertEqual(edf.DT(-2), conv.value[0, 1, 0, 0])
+        self.assertEqual(edf.DT(1), conv.value[0, 1, 1, 0])
+        
+    def testForward2(self):    
+        x = type('', (), {})()
+        x.value = np.ndarray([3, 5, 6, 1])
+        x.value.fill(0)
+        x.value[0, :, :, 0] = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30]]
+        x.grad = x.value
+        
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 1, 2])
+        f.value[:, :, 0, 0] = [[1, 2, 1], [2, 2, 1]]
+        f.value[:, :, 0, 1] = [[1, 0, -1], [1, 0, -1]]
+        f.grad = f.value
+        
+        conv = Conv(f, x, 3, 0)
+        conv.forward()
+        self.assertEqual((3, 2, 2, 2), conv.value.shape)
+        
+        self.assertEqual(edf.DT(47), conv.value[0, 0, 0, 0])
+        self.assertEqual(edf.DT(74), conv.value[0, 0, 1, 0])
+        self.assertEqual(edf.DT(209), conv.value[0, 1, 0, 0])
+        self.assertEqual(edf.DT(236), conv.value[0, 1, 1, 0])
+        
+        self.assertEqual(edf.DT(-4), conv.value[0, 0, 0, 1])
+        self.assertEqual(edf.DT(-4), conv.value[0, 0, 1, 1])
+        self.assertEqual(edf.DT(-4), conv.value[0, 1, 0, 1])
+        self.assertEqual(edf.DT(-4), conv.value[0, 1, 1, 1])
 
-    def testBackward(self):
-        self.fail("Not implemented")
+    def testPadForward(self):
+        x = type('', (), {})()
+        x.value = np.ndarray([3, 5, 6, 2])
+        x.value.fill(0)
+        x.value[0, :, :, 0] = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30]]
+        x.value[0, :, :, 1] = [[1, 2, 3, 3, 2, 1], [1, 1, 2, 2, 1, 1], [1, 1, 1, 1, 1, 1], [1, 2, 3, 3, 2, 1], [1, 1, 2, 2, 1, 1]]
+        
+        x.grad = x.value
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 2, 1])
+        f.value[:, :, 0, 0] = [[1, 1, 1], [1, 1, 1]]
+        f.value[:, :, 1, 0] = [[1, 0, -1], [1, 0, -1]]
+        f.grad = f.value
+        
+        conv = Conv(f, x, 3, 1)
+        conv.forward()
+        self.assertEqual((3, 2, 2, 1), conv.value.shape)
+        
+        self.assertEqual(edf.DT(1), conv.value[0, 0, 0, 0])
+        self.assertEqual(edf.DT(13), conv.value[0, 0, 1, 0])
+        self.assertEqual(edf.DT(63), conv.value[0, 1, 0, 0])
+        self.assertEqual(edf.DT(115), conv.value[0, 1, 1, 0])
+        
+    def testBackward1(self):
+        self.fail('Not implemented')
     
+    def testBackward2(self):
+        self.fail('Not implemented')
 
 if __name__ == '__main__':
     unittest.main()    

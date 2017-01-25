@@ -25,48 +25,51 @@ class Conv:
 
     ####################### Please implement this function####################### 
     def forward(self):
-        xshape = self.k.shape
-        fshape = self.f.shape
-        owsize = np.ceil((xshape[1] - fshape[0] + 1) / self.stride)
-        ohsize = np.ceil((xshape[2] - fshape[0] + 1) / self.stride)
-        self.value = np.ndarray([xshape[0], owsize, ohsize, fshape[2]], np.dtype(np.float64))
+        xshape = self.k.value.shape
+        fshape = self.f.value.shape
         
-        yshape = self.value.shape
         # padding
-        padded = np.ndarray([xshape[0], xshape[1] + 2 * self.xpad, xshape[2] + 2 * self.ypad, xshape[3]])
+        padded = np.ndarray([xshape[0], xshape[1] + 2 * self.xpad, xshape[2] + 2 * self.ypad, xshape[3]], self.k.value.dtype)
         padded.fill(0)
         padded[:, self.xpad: xshape[1] + self.xpad , self.ypad : xshape[2] + self.ypad , :] = self.k.value
+        pshape = padded.shape
+        # Calculate shape
+        owsize = np.ceil((pshape[1] - fshape[0] + 1) / self.stride)
+        ohsize = np.ceil((pshape[2] - fshape[1] + 1) / self.stride)
+        self.value = np.ndarray([xshape[0], owsize, ohsize, fshape[3]], np.dtype(np.float64))
+        yshape = self.value.shape
         
-        ksize = fshape[0]
+        wksize = fshape[0]
+        hksize = fshape[1]
         for bi in range(yshape[0]):
-            for ci in range(yshape[3]):
+            for cpi in range(yshape[3]):
                 for wi in range(yshape[1]):
                     for hi in range(yshape[2]):
-                        self.value[bi, wi, hi, ci] = np.multiply(padded[bi,
-                                                                        self.stride * wi : self.stride * wi + ksize,
-                                                                        self.stride * hi : self.stride * hi + ksize,
-                                                                        :],
-                                                                 self.f[:, :, :, ci]).sum()
+                        self.value[bi, wi, hi, cpi] = np.multiply(
+                            padded[bi, self.stride * wi : self.stride * wi + wksize, self.stride * hi : self.stride * hi + hksize, :],
+                            self.f.value[:, :, :, cpi]).sum()
                 
     ####################### Please implement this function#######################         
     def backward(self):
         if self.k.grad is None or self.f.grad is None:
             return
-        fgrad = np.ndarray(self.f.value.shape, np.dtype(np.float64))
-        fgrad.fill(0)
-        kgrad = np.ndarray(self.k.value.shape, np.dtype(np.float64))
-        kgrad.fill(0)
         
         kshape = self.k.value.shape
         fshape = self.f.value.shape
+        fgrad = np.ndarray(fshape, np.dtype(np.float64))
+        fgrad.fill(0)
+        pad_kgrad = np.ndarray(kshape, np.dtype(np.float64))
+        pad_kgrad.fill(0)
+        
         yshape = self.value.shape
+        
         for bi in range(kshape[0]):
-            for ci in range(kshape[3]):
-                for c2i in range(kshape[3]):
+            for ci in range(fshape[2]):
+                for cpi in range(kshape[3]):
                     for wi in range(yshape[1]):
                         for hi in range(yshape[2]):
                             for wki in range(fshape[0]):
-                                for hki in range(fshape[0]):
+                                for hki in range(fshape[1]):
                                     xwi = self.stride * wi + wki
                                     xhi = self.stride * hi + hki
                                     kgrad[bi, xwi, xhi, ci] += self.grad[bi, wi, hi, c2i] * self.f.value[wki, hki, c2i, ci]
