@@ -18,11 +18,16 @@
 \maketitle
 
 \section*{Problem 1}
+\begin{align*}
+&||\nabla_w\ell(w,x,y)|| < b
+\implies \forall i,n, |(\nabla_w \ell(w,x_i,y_i))_n -
+(\ell_{\text{generalize}}(w))_n| < 2b
+\end{align*}
 Using the concentration inequality for gradient estimation mentioned in the
 slides,
 \begin{align*}
 ||\nabla_w\ell_{\text{train}}(w) - \nabla_w \ell_{\text{generalize}}(w)|| \leq
-\frac{b(1+\sqrt(2ln(1/\delta)))}{\sqrt{N}}
+\frac{2b\left(1+\sqrt{2\ln(1/\delta)}\right)}{\sqrt{N}}
 \end{align*}
 with probability $1-\delta$
 \section*{Problem 2}

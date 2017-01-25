@@ -355,10 +355,59 @@ class TestConv(unittest.TestCase):
         self.assertEqual(edf.DT(115), conv.value[0, 1, 1, 0])
         
     def testBackward1(self):
-        self.fail('Not implemented')
+        x = type('', (), {})()
+        x.value = np.ndarray([1, 5, 6, 1])
+        x.value.fill(0)
+        x.value[0, :, :, 0] = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12], [13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24], [25, 26, 27, 28, 29, 30]]
+        
+        x.grad = np.ndarray(x.value.shape)
+        x.grad.fill(0)
+        
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 1, 1])
+        f.value[:, :, 0, 0] = [[1, 1, 1], [1, 2, 1]]
+        f.grad = np.ndarray(f.value.shape)
+        f.grad.fill(0)
+        
+        conv = Conv(f, x, 2, 0)
+        conv.forward()
+        
+        conv.grad = np.ndarray([1, 2, 2, 1], np.dtype(np.float64))
+        conv.grad[0, :, :, 0] = [[3, 2 ], [7, 5]]
+        conv.backward()
+        
+        self.assertTrue(np.array_equal([[175, 192, 209], [277, 294, 311]], f.grad[:, :, 0, 0]))
+        self.assertTrue(np.array_equal([[3, 3, 5, 2, 2, 0], [3, 6, 5, 4, 2, 0], [7, 7, 12, 5, 5, 0], [7, 14, 12, 10, 5, 0], [0, 0, 0, 0, 0, 0]], x.grad[0, :, :, 0]))
     
     def testBackward2(self):
-        self.fail('Not implemented')
+        x = type('', (), {})()
+        x.value = np.ndarray([1, 4, 5, 2])
+        x.value.fill(0)
+        x.value[0, :, :, 0] = [[1, 4, 9, 2, 5], [3, 8, 6, 4, 7], [2, 5, 2, 1, 4], [3, 3, 0, 9, 7]]
+        x.value[0, :, :, 1] = [[1, 1, 2, 1, 1], [3, 2, 1, 4, 1], [5, 1, 2, 6, 4], [7, 7, 0, 3, 3]]
+        
+        x.grad = np.ndarray(x.value.shape)
+        x.grad.fill(0)
+        
+        f = type('', (), {})()
+        f.value = np.ndarray([2, 3, 2, 1])
+        f.value[:, :, 0, 0] = [[1, 0, 1], [-1, 0, 1]]
+        f.value[:, :, 1, 0] = [[1, 2, 1], [1, 2, 1]]
+        f.grad = np.ndarray(f.value.shape)
+        f.grad.fill(0)
+        
+        conv = Conv(f, x, 3, 1)
+        conv.forward()
+                
+        conv.grad = np.ndarray([1, 2, 2, 1], np.dtype(np.float64))
+        conv.grad[0, :, :, 0] = [[3, 2 ], [7, 5]]
+        conv.backward()
+        
+        self.assertTrue(np.array_equal([[10, 19, 55], [18, 73, 78]], f.grad[:, :, 0, 0]))
+        self.assertTrue(np.array_equal([[10, 65, 27], [4, 69, 69]], f.grad[:, :, 1, 0]))
+        self.assertTrue(np.array_equal([[0, 3, -2, 0, 2], [0, 0, 0, 0, 0], [0, 7, 5, 0, 5], [0, 7, -5, 0, 5]], x.grad[0, :, :, 0]))
+        self.assertTrue(np.array_equal([[6, 3, 2, 4, 2], [0, 0, 0, 0, 0], [14, 7, 5, 10, 5], [14, 7, 5, 10, 5]], x.grad[0, :, :, 1]))
+    
 
 if __name__ == '__main__':
     unittest.main()    
