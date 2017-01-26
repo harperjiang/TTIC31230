@@ -93,10 +93,10 @@ class MaxPool:
             self.stride = ksz
         else:
             self.stride = stride
-        # Some optimization
-        if self.stride == self.ksz:
-            self.optmode = True
         self.grad = None if x.grad is None else edf.DT(0)
+        
+        self.square = np.ndarray([self.ksz, self.ksz])
+        self.square.fill(1)
 
     ####################### Please implement this function#######################     
     def forward(self):
@@ -106,42 +106,36 @@ class MaxPool:
                                  int(np.ceil((xshape[2] - self.ksz + 1) / self.stride)),
                                  xshape[3]], self.x.value.dtype)
         self.pattern = np.ndarray(xshape, self.x.value.dtype)
+        self.pattern.fill(0)
         vshape = self.value.shape
-        for bi in range(vshape[0]):
-            for ci in range(vshape[3]):
-                for wi in range(vshape[1]):
-                    for hi in range(vshape[2]):
-                        # Record the maximal value and its location
-                        self.value[bi, wi, hi, ci] = self.x.value[bi, wi * self.stride:wi * self.stride + self.ksz,
-                                                                  hi * self.stride:hi * self.stride + self.ksz,
-                                                                  ci].max()
+        for wi in range(vshape[1]):
+            for hi in range(vshape[2]):
+                # Record the maximal value and its location
+                sliding = self.x.value[:, wi * self.stride:wi * self.stride + self.ksz,
+                                       hi * self.stride:hi * self.stride + self.ksz,
+                                       :]
+                maxval = sliding.max(axis=(1, 2))
+                self.value[:, wi, hi, :] = maxval
     ####################### Please implement this function#######################             
     def backward(self):
         if self.x.grad is None:
             return
         grad = np.ndarray(self.x.value.shape, np.dtype(np.float64))
         grad.fill(0)
-        sshape = self.value.shape
-        if self.optmode:
-            print('Optimal Backward')
-            square = np.ndarray([self.ksz,self.ksz])
-            square.fill(1)
-            for bi in range(sshape[0]):
-                for ci in range(sshape[3]):
-                    gval = self.grad[bi, :, :, ci]
-                    expand = np.kron(gval, square)
-                    self.x.grad[bi,:,:,ci] += expand * self.pattern[bi,:,:,ci]
-        else:
-            for bi in range(sshape[0]):
-                for ci in range(sshape[3]):
-                    for wi in range(sshape[1]):
-                        for hi in range(sshape[2]):
-                            gval = self.grad[bi, wi, hi, ci]
-                            maxvalue = self.value[bi, wi, hi, ci]
-                            target = self.x.value[bi, wi * self.stride:wi * self.stride + self.ksz,
-                                                  hi * self.stride:hi * self.stride + self.ksz, ci]
-                            grad[bi, wi * self.stride:wi * self.stride + self.ksz,
-                                 hi * self.stride:hi * self.stride + self.ksz, ci] += np.where(target == maxvalue, 1, 0) * gval
+        vshape = self.value.shape
+        
+        for wi in range(vshape[1]):
+            for hi in range(vshape[2]):
+                gval = self.grad[:, wi, hi, :]
+                sval = self.value[:, wi, hi, :]
+                target = self.x.value[:, wi * self.stride:wi * self.stride + self.ksz,
+                                      hi * self.stride : hi * self.stride + self.ksz, :]
+                gexpand = np.einsum('ij,mn->imnj', gval, self.square)
+                vexpand = np.einsum('ij,mn->imnj', sval, self.square)
+                equ = np.equal(vexpand, target)
+                grad[:, wi * self.stride:wi * self.stride + self.ksz,
+                     hi * self.stride : hi * self.stride + self.ksz, :] += gexpand * equ
+        
         self.x.grad += grad
 ########################################### AvePool layer#############################################
 ############################### Please implement the forward abd backward method in this class ##############                             
@@ -156,6 +150,9 @@ class AvePool:
             self.stride = stride
         self.grad = None if x.grad is None else edf.DT(0)
         
+        self.square = np.ndarray([self.ksz, self.ksz])
+        self.square.fill(1)
+        
     ####################### Please implement this function#######################   
     def forward(self):
         xshape = self.x.value.shape
@@ -164,13 +161,12 @@ class AvePool:
                                  int(np.ceil((xshape[2] - self.ksz + 1) / self.stride)),
                                  xshape[3]], self.x.value.dtype)
         vshape = self.value.shape
-        for bi in range(vshape[0]):
-            for ci in range(vshape[3]):
-                for wi in range(vshape[1]):
-                    for hi in range(vshape[2]):
-                        xavg = self.x.value[bi, wi * self.stride: wi * self.stride + self.ksz,
-                                            hi * self.stride: hi * self.stride + self.ksz, ci].sum() / np.square(self.ksz)
-                        self.value[bi, wi, hi, ci] = xavg
+        for wi in range(vshape[1]):
+            for hi in range(vshape[2]):
+                xavg = np.average(self.x.value[:, wi * self.stride: wi * self.stride + self.ksz,
+                                    hi * self.stride: hi * self.stride + self.ksz, :],
+                                  axis=(1, 2))
+                self.value[:, wi, hi, :] = xavg
     ####################### Please implement this function#######################    
     def backward(self):
         if self.x.grad is None:
@@ -178,13 +174,13 @@ class AvePool:
         grad = np.ndarray(self.x.value.shape, np.dtype(np.float64))
         grad.fill(0)
         vshape = self.value.shape
-        for bi in range(vshape[0]):
-            for ci in range(vshape[3]):
-                for wi in range(vshape[1]):
-                    for hi in range(vshape[2]):
-                        gval = self.grad[bi, wi, hi, ci]
-                        grad[bi, wi * self.stride: wi * self.stride + self.ksz,
-                             hi * self.stride: hi * self.stride + self.ksz, ci] += gval 
+        
+        for wi in range(vshape[1]):
+            for hi in range(vshape[2]):
+                gval = self.grad[:, wi, hi, :]
+                gvalexpand = np.einsum('ij,mn->imnj', gval, self.square)
+                grad[:, wi * self.stride: wi * self.stride + self.ksz,
+                     hi * self.stride: hi * self.stride + self.ksz, :] += gvalexpand 
         self.x.grad += grad / np.square(self.ksz)
 
 
