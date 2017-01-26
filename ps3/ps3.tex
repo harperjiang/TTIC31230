@@ -1,0 +1,116 @@
+%%This is a very basic article template.
+%%There is just one section and two subsections.
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{cleveref}
+\usepackage{xcolor} 
+\usepackage{subcaption}
+
+\setlength{\parskip}{0.2cm}
+
+\title{TTIC 31230 Problem Set 3 \\ Win 2017}
+
+\author{Hao Jiang}
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+\subsection*{Implementation}
+Please see attached jupyter notebook for the implementation of Conv / MaxPool /
+AvePool class as well as the convolutional network architecture.
+\subsection*{Experiment Result}
+The experiment result is demonstrated in \Cref{fig:result} and I get a test
+accuracy of \textbf{\texttt{0.3904}} after 10 epochs. The execution time on my
+test machine is around 400s per epoch.
+\begin{figure*}
+\begin{subfigure}{0.5\textwidth}
+\includegraphics[scale=0.45]{loss}
+\caption{Training Loss}
+\end{subfigure}
+~
+\begin{subfigure}{0.5\textwidth}
+\includegraphics[scale=0.45]{accuracy}
+\caption{Test Accuracy}
+\end{subfigure}
+\caption{Experiment Result}
+\label{fig:result}
+\end{figure*}
+\subsection*{Performance Optimization}
+To speed up the convolution operation, I make heave use of numpy's
+ndarray operations instead of writing nested loops. All operations in my
+implementation only loops on two dimensions, namely the images' width and
+height.
+
+In the \texttt{forward} function of \texttt{MaxPool} and \texttt{AvePool}, I use
+numpy's \texttt{max} and \texttt{average} operation. Let the shape of output
+value be $(B,W,H,C)$, I loop on dimension $W$ and $H$, which indicates a square
+region on all batch instances and channels. For each such square region, I
+calculate the max / average on axis 1,2, leaving axis 0 and 3 (which are the
+index in a batch and channel) unchanged. This operation is efficiently
+equivalent to compute max / average over each images in a batch and each
+channels in parallel. It avoids the loop on batch size and number of channels
+and speed up the operation.
+
+In the \texttt{backward} function of \texttt{AvePool}, I again only loop on
+two dimensions. Let the shape of \texttt{y.grad} be $(B, W, H, C)$. The loop
+runs on $W$ and $H$ and get a ndarray of shape $(B,C)$ for each ($W$,$H$) pair.
+For each such ndarray, I use an all-1 square matrix of shape $(k, k)$ to
+expand it to shape $(B,k,k,C)$, where $k$ is the size of the square region. Let
+$S$ be the stride size, we have 
+\begin{align*}
+\forall b, c, i, j, k_i, k_j,
+\texttt{expand}[b, i * S + k_i, j * S + k_j, c] = \texttt{ygrad}[b,i,j,c]
+\end{align*}
+By simply adding all these expanding results together, we will have the gradient
+to be updated to \texttt{x.grad}.
+
+In the \texttt{backward} function of \texttt{MaxPool}, I use the similar
+idea. But here in each square region, the gradient will only be backprop to
+locations holding the maximal value. To implement this, we create a mask by
+comparing \texttt{x.value} to a square matrix with every value equal to the
+maximal value. 
+
+An example is shown in \Cref{fig:backexample}. Here the input
+value is $\left[\begin{array}{cc}3 & 6 \\ 7 & 7\\\end{array}\right]$, and the
+maximal value is 7. Comparing the input with an all-7 matrix gives us a mask
+indicating the location of maximal value. When we want backprop a gradient,
+e.g., 5 to $X$, we first expand the gradient to a square and element-wise
+multiply it with the mask, obtaining the backprop result.
+\begin{figure}
+\begin{align*}
+&X = \left[\begin{array}{cc}
+3 & 6 \\ 7 & 7\\  
+\end{array}\right] \\
+&\left(\left[\begin{array}{cc}
+3 & 6 \\ 7 & 7\\  
+\end{array}\right] 
+ == \left[\begin{array}{cc}
+7 & 7 \\ 7 & 7\\  
+\end{array}\right]\right) \implies
+\left[\begin{array}{cc}
+0 & 0 \\ 1 & 1\\  
+\end{array}\right]  \\
+& \text{grad} = 5 \implies \\&\left[\begin{array}{cc}
+5 & 5 \\ 5 & 5\\  
+\end{array}\right] \circ \left[\begin{array}{cc}
+0 & 0 \\ 1 & 1\\  
+\end{array}\right] \implies \left[\begin{array}{cc}
+0 & 0 \\ 5 & 5\\  
+\end{array}\right]
+\end{align*}
+\caption{Example: Implementing MaxPool.backward}
+\label{fig:backexample}
+\end{figure}
+
+For \texttt{Conv}'s \texttt{forward} and \texttt{backward} method, I follow
+the hint in problem description and use \texttt{numpy.einsum} to manipulate
+multi-dimensional array multiplications. Again this requires only explicit loop
+on the $W$ and $H$ dimension on the dataset.
+
+
+\end{document}
