@@ -93,6 +93,9 @@ class MaxPool:
             self.stride = ksz
         else:
             self.stride = stride
+        # Some optimization
+        if self.stride == self.ksz:
+            self.optmode = True
         self.grad = None if x.grad is None else edf.DT(0)
 
     ####################### Please implement this function#######################     
@@ -102,7 +105,7 @@ class MaxPool:
                                  int(np.ceil((xshape[1] - self.ksz + 1) / self.stride)),
                                  int(np.ceil((xshape[2] - self.ksz + 1) / self.stride)),
                                  xshape[3]], self.x.value.dtype)
-        self.xmaxs = {}
+        self.pattern = np.ndarray(xshape, self.x.value.dtype)
         vshape = self.value.shape
         for bi in range(vshape[0]):
             for ci in range(vshape[3]):
@@ -118,21 +121,27 @@ class MaxPool:
             return
         grad = np.ndarray(self.x.value.shape, np.dtype(np.float64))
         grad.fill(0)
-        # for each grad, prop only to the max inputs
         sshape = self.value.shape
-        for bi in range(sshape[0]):
-            for ci in range(sshape[3]):
-                for wi in range(sshape[1]):
-                    for hi in range(sshape[2]):
-                        gval = self.grad[bi, wi, hi, ci]
-                        
-                        maxvalue = self.value[bi, wi, hi, ci]
-                        print('Max value is', maxvalue)
-                        target = self.x.value[bi, wi * self.stride:wi * self.stride + self.ksz,
-                                              hi * self.stride:hi * self.stride + self.ksz, ci]
-                        pos = zip(*np.where(target == maxvalue))
-                        for p in pos:
-                            grad[bi, wi * self.stride + p[0], hi * self.stride + p[1], ci] += gval
+        if self.optmode:
+            print('Optimal Backward')
+            square = np.ndarray([self.ksz,self.ksz])
+            square.fill(1)
+            for bi in range(sshape[0]):
+                for ci in range(sshape[3]):
+                    gval = self.grad[bi, :, :, ci]
+                    expand = np.kron(gval, square)
+                    self.x.grad[bi,:,:,ci] += expand * self.pattern[bi,:,:,ci]
+        else:
+            for bi in range(sshape[0]):
+                for ci in range(sshape[3]):
+                    for wi in range(sshape[1]):
+                        for hi in range(sshape[2]):
+                            gval = self.grad[bi, wi, hi, ci]
+                            maxvalue = self.value[bi, wi, hi, ci]
+                            target = self.x.value[bi, wi * self.stride:wi * self.stride + self.ksz,
+                                                  hi * self.stride:hi * self.stride + self.ksz, ci]
+                            grad[bi, wi * self.stride:wi * self.stride + self.ksz,
+                                 hi * self.stride:hi * self.stride + self.ksz, ci] += np.where(target == maxvalue, 1, 0) * gval
         self.x.grad += grad
 ########################################### AvePool layer#############################################
 ############################### Please implement the forward abd backward method in this class ##############                             

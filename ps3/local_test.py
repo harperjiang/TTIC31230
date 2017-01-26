@@ -118,7 +118,6 @@ class MaxPool:
                                  int(np.ceil((xshape[1] - self.ksz + 1) / self.stride)),
                                  int(np.ceil((xshape[2] - self.ksz + 1) / self.stride)),
                                  xshape[3]], self.x.value.dtype)
-        self.xmaxs = {}
         vshape = self.value.shape
         for bi in range(vshape[0]):
             for ci in range(vshape[3]):
@@ -142,9 +141,7 @@ class MaxPool:
                 for wi in range(sshape[1]):
                     for hi in range(sshape[2]):
                         gval = self.grad[bi, wi, hi, ci]
-                        
                         maxvalue = self.value[bi, wi, hi, ci]
-                        print('Max value is', maxvalue)
                         target = self.x.value[bi, wi * self.stride:wi * self.stride + self.ksz,
                                               hi * self.stride:hi * self.stride + self.ksz, ci]
                         pos = zip(*np.where(target == maxvalue))
