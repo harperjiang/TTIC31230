@@ -95,14 +95,14 @@ def BuildModel():
     vocab_init = np.zeros([B, n_vocab])
     vocab_init[:,1] = 1
     vocab_init = edf.Value(vocab_init)
-    h = edf.VDot(vocab_init, C2V)
+    h = edf.Value(np.zeros([B, hidden_dim]))
     # Init C_0 to be zero
     c = edf.Value(np.zeros([B, hidden_dim]))
     
     for t in range(T):
-        x_t = edf.Value(ExtendInput(inp.value[:, t]))
+        x_t = edf.Value(inp.value[:, t])
         
-        x_t = edf.VDot(x_t, C2V)
+        x_t = edf.Embed(x_t, C2V)
 
         h, c = LSTMCell(x_t, h, c)       
         # Score and loss
