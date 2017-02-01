@@ -207,7 +207,7 @@ def Eval(data, cnt):
 
 
 ############################################### training loop #####################################################
-
+np.seterr(all='raise')
 batches = range(0, len(train_data), batch)
 minbatches = [train_data[idx:idx+batch] for idx in batches]
 

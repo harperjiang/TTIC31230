@@ -1,6 +1,6 @@
 import numpy as np
 
-DT=np.float32
+DT=np.float64
 eps=1e-12
 # Globals
 components = []
@@ -179,12 +179,14 @@ class Tanh:
         self.grad = None if x.grad is None else DT(0)
 
     def forward(self):
+        try:
+            x_exp = np.exp(self.x.value)
+            x_neg_exp = np.exp(-self.x.value)
 
-        x_exp = np.exp(self.x.value)
-        x_neg_exp = np.exp(-self.x.value)
-
-        self.value = (x_exp - x_neg_exp)/(x_exp + x_neg_exp)
-
+            self.value = (x_exp - x_neg_exp)/(x_exp + x_neg_exp)
+        except FloatingPointError:
+            quit()
+            
     def backward(self):
         if self.x.grad is not None:
             self.x.grad = self.x.grad + self.grad * (1 - self.value*self.value)
