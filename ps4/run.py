@@ -71,7 +71,7 @@ def LSTMCell(x, h, c):
     
     # Output
     c_next = edf.Add(edf.Mul(f_gate, c), edf.Mul(i_gate, c_temp))
-    h_next = edf.Mul(o_temp, edf.Tanh(c_temp))
+    h_next = edf.Mul(o_temp, edf.Tanh(c_next))
     return h_next, c_next
 
 # Extend input from [B, 1] to shape [B, n_vocab]
