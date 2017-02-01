@@ -26,16 +26,16 @@ edf.params = []
 # input embedding
 C2V = edf.Param(edf.xavier((n_vocab, hidden_dim)))
 # forget gate
-Wf = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
+Wf = edf.Param(edf.xavier((2 * hidden_dim, hidden_dim)))
 bf = edf.Param(np.zeros((hidden_dim)))
 # input gate
-Wi = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
+Wi = edf.Param(edf.xavier((2 * hidden_dim, hidden_dim)))
 bi = edf.Param(np.zeros((hidden_dim)))
 # carry cell
-Wc = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
+Wc = edf.Param(edf.xavier((2 * hidden_dim, hidden_dim)))
 bc = edf.Param(np.zeros((hidden_dim)))
 # output cell
-Wo = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
+Wo = edf.Param(edf.xavier((2 * hidden_dim, hidden_dim)))
 bo = edf.Param(np.zeros((hidden_dim)))
 # output embedding
 V = edf.Param(edf.xavier((hidden_dim, n_vocab)))
@@ -74,13 +74,6 @@ def LSTMCell(x, h, c):
     h_next = edf.Mul(o_temp, edf.Tanh(c_next))
     return h_next, c_next
 
-# Extend input from [B, 1] to shape [B, n_vocab]
-def ExtendInput(toe):
-    B = toe.shape[0]
-    result = np.zeros([B, n_vocab])
-    for b in range(B):
-        result[b, np.int32(toe[b])] = 1 
-    return result         
                      
 def BuildModel():
  
@@ -92,10 +85,9 @@ def BuildModel():
     loss = None
     
     # Init h_0 with one-hot
-    vocab_init = np.zeros([B, n_vocab])
-    vocab_init[:,1] = 1
+    vocab_init = np.ones([B])
     vocab_init = edf.Value(vocab_init)
-    h = edf.Value(np.zeros([B, hidden_dim]))
+    h = edf.Embed(vocab_init, C2V)
     # Init C_0 to be zero
     c = edf.Value(np.zeros([B, hidden_dim]))
     
@@ -108,7 +100,7 @@ def BuildModel():
         # Score and loss
         
         pred = edf.SoftMax(edf.VDot(h, V))
-        if t != 0:
+        if t != T - 1:
             score.append(pred)   
 
         if t != T - 1:
@@ -121,7 +113,7 @@ def BuildModel():
         else:
             loss = edf.Add(loss, loss_t)
     
-    loss = edf.Mean(loss)
+    loss = edf.Mul(edf.Mean(loss), edf.Value(np.float64(1)/T))
     return loss, score
     
     
@@ -129,23 +121,23 @@ def BuildModel():
 def CalPerp(score):
     
     prob = [p.value for p in score]
-    prob = np.transpose(np.stack(prob, axis = 0),(1,0,2))
+    prob = np.transpose(np.stack(prob, axis=0), (1, 0, 2))
     
     B = prob.shape[0]
     T = prob.shape[1]
     V = prob.shape[2]
     
     masks = np.zeros((B, T), dtype=np.int32)
-    masks[inp.value[:,1:] != 0] = 1
+    masks[inp.value[:, 1:] != 0] = 1
     
     prob = prob.reshape(-1)
-    idx = np.int32(inp.value[:,1:].reshape(-1))
+    idx = np.int32(inp.value[:, 1:].reshape(-1))
     outer_dim = len(idx)
-    inner_dim = len(prob)/outer_dim
-    pick = np.int32(np.array(range(outer_dim))*inner_dim + idx)
+    inner_dim = len(prob) / outer_dim
+    pick = np.int32(np.array(range(outer_dim)) * inner_dim + idx)
     prob = prob[pick].reshape(B, T)
         
-    return -np.sum(np.log(prob[np.nonzero(prob*masks)]))
+    return -np.sum(np.log(prob[np.nonzero(prob * masks)]))
 
 
 # predict the sequence
@@ -169,7 +161,7 @@ def Predict(max_step, prefix):
 
         wordvec = edf.Embed(pred, C2V)
         xt = edf.Reshape(wordvec, [-1, hidden_dim])
-        h_next,c_next = LSTMCell(xt, h, c)
+        h_next, c_next = LSTMCell(xt, h, c)
         p = edf.SoftMax(edf.VDot(h_next, V))
         pred = edf.ArgMax(p)
         h = h_next
@@ -181,7 +173,7 @@ def Predict(max_step, prefix):
     stop_idx = utils.to_index('}')
     
     if stop_idx in idx:
-        return idx[0:idx.index(stop_idx)+1]
+        return idx[0:idx.index(stop_idx) + 1]
     else:
         return idx
 
@@ -190,7 +182,7 @@ def Eval(data, cnt):
     perp = 0.
     avg_loss = 0.
     test_batches = range(0, len(data), batch)
-    test_minbatches = [data[idx:idx+batch] for idx in test_batches]
+    test_minbatches = [data[idx:idx + batch] for idx in test_batches]
     
     for minbatch in test_minbatches:
         
@@ -201,7 +193,7 @@ def Eval(data, cnt):
         avg_loss += loss.value
         perp += CalPerp(score)
            
-    perp = np.exp(perp/cnt)
+    perp = np.exp(perp / cnt)
     avg_loss /= len(test_batches)
     return perp, avg_loss
 
@@ -209,7 +201,7 @@ def Eval(data, cnt):
 ############################################### training loop #####################################################
 np.seterr(all='raise')
 batches = range(0, len(train_data), batch)
-minbatches = [train_data[idx:idx+batch] for idx in batches]
+minbatches = [train_data[idx:idx + batch] for idx in batches]
 
 epoch = 30
 
@@ -226,7 +218,7 @@ print (utils.to_string(generation))
 for ep in range(epoch):
 
     perm = np.random.permutation(len(minbatches)).tolist() 
-    stime=time()
+    stime = time()
     
     for k in range(len(minbatches)):
         
@@ -239,7 +231,7 @@ for ep in range(epoch):
         edf.GradClip(10)
         edf.SGD(eta)
        
-    duration = (time() - stime)/60.
+    duration = (time() - stime) / 60.
     
     perp, loss = Eval(valid_data, vacnt)
     print("Epoch %d: Perplexity: %0.5f Avg loss = %0.5f [%.3f mins]" % (ep, perp, loss, duration))
