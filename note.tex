@@ -1,0 +1,55 @@
+%%This is a very basic article template.
+%%There is just one section and two subsections.
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{parskip}
+\usepackage{cleveref}
+\usepackage{xcolor} 
+
+\setlength{\parskip}{0.2cm}
+
+\title{TTIC 31230 Problem Set 2 \\ Win 2017}
+
+\author{Hao Jiang} 
+\begin{document}
+
+\maketitle
+
+\section*{Vanishing and Exploding Gradients}
+Two Causes:
+\begin{enumerate}
+\item Activation Function Saturation
+
+For sigmoid, at locations that is far away from center the derivative 
+for activation function is small. When the backpropagation goes through 
+many activation functions the gradient may vanish. For ReLU, the gradient 
+is saturated at $<0$
+
+\item Repeated Multiplication by Network Weight
+
+For deep CNNs, the gradient may increase / decrease exponentially with the
+number of layers.
+\end{enumerate} 
+
+Method for maintaining gradients includes
+\begin{enumerate}
+\item Initialization
+
+Zero mean unit variance distribution
+\item Batch Normalization
+
+Normalize the value in a batch to have zero mean and unit variance. Only do
+at training time. Typically used just before a non-linear activation.
+
+Both have the inituition to leave the data in activation function's active
+region.
+\item Highway Architectures (Skip Connections)
+
+\end{enumerate}
+Regularization is ways to express preference on target functions.
+In comparison to $L_2$ regularization, $L_1$ regularization results in a 
+solution that is more sparse. Sparsity in this context refers to the fact 
+that some parameters have an optimal value of zero.
+\end{document}
