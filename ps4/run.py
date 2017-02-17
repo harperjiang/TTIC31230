@@ -102,8 +102,6 @@ def BuildModel():
         pred = edf.SoftMax(edf.VDot(h, V))
         if t != T - 1:
             score.append(pred)   
-
-        if t != T - 1:
             x_t1 = edf.Value(inp.value[:, t + 1])
         else:
             x_t1 = edf.Value(np.zeros(B))             
