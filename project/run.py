@@ -245,16 +245,19 @@ for ep in range(epoch):
         f = open(model, 'wb')
         p_value = []
         for p in parameters:
-            p_value.append(p.value)
+            for i in range(layer):
+                p_value.append(p[i].value)
         pickle.dump(p_value, f)
 
     else:
 
         # load the last best model and decay the learning rate
         eta *= decay
+        plength = len(parameters)
         with open(model, 'rb') as f:
             p_value = pickle.load(f)
             idx = 0
             for p in p_value:
-                parameters[idx].value = p
+                for i in range(layer):
+                    parameters[idx * plength + i].value = p
                 idx += 1
