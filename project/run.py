@@ -50,7 +50,7 @@ for i in range(layer):
 
 V = edf.Param(edf.xavier((hidden_dim, n_vocab)))
 
-parameters.extend([C2V, V, Wf, bf, Wi, bi, Wc, bc, Wo, bo])
+parameters.extend([C2V, Wf, bf, Wi, bi, Wc, bc, Wo, bo, V])
 
 
 # load the trained model if exist
