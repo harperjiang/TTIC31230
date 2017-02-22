@@ -24,18 +24,29 @@ np.random.seed(0)
 edf.params = []
 C2V = edf.Param(edf.xavier((n_vocab, hidden_dim)))
 
-# forget gate
-Wf = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
-bf = edf.Param(np.zeros((hidden_dim)))
-# input gate
-Wi = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
-bi = edf.Param(np.zeros((hidden_dim)))
-# carry cell
-Wc = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
-bc = edf.Param(np.zeros((hidden_dim)))
-# output cell
-Wo = edf.Param(edf.xavier((2*hidden_dim, hidden_dim)))
-bo = edf.Param(np.zeros((hidden_dim)))
+layer = 2
+Wf = []
+bf = []
+Wi = []
+bi = []
+Wc = []
+bc = []
+Wo = []
+bo = []
+
+for i in range(layer):
+    # forget gate
+    Wf.append(edf.Param(edf.xavier((2*hidden_dim, hidden_dim))))
+    bf.append(edf.Param(np.zeros((hidden_dim))))
+    # input gate
+    Wi.append(edf.Param(edf.xavier((2*hidden_dim, hidden_dim))))
+    bi.append(edf.Param(np.zeros((hidden_dim))))
+    # carry cell
+    Wc.append(edf.Param(edf.xavier((2*hidden_dim, hidden_dim))))
+    bc.append(edf.Param(np.zeros((hidden_dim))))
+    # output cell
+    Wo.append(edf.Param(edf.xavier((2*hidden_dim, hidden_dim))))
+    bo.append(edf.Param(np.zeros((hidden_dim))))
 
 V = edf.Param(edf.xavier((hidden_dim, n_vocab)))
 
@@ -52,17 +63,16 @@ if os.path.exists(model):
             idx += 1
 
 
-def LSTMCell(xt, h, c):
+def LSTMCell(xt, h, c, layer):
 
-    f = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wf), bf))
-    i = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wi), bi))
-    o = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wo), bo))
-    c_hat = edf.Tanh(edf.Add(edf.VDot(edf.ConCat(xt, h), Wc), bc))
+    f = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wf[layer]), bf[layer]))
+    i = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wi[layer]), bi[layer]))
+    o = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wo[layer]), bo[layer]))
+    c_hat = edf.Tanh(edf.Add(edf.VDot(edf.ConCat(xt, h), Wc[layer]), bc[layer]))
     c_next = edf.Add(edf.Mul(f, c), edf.Mul(i, c_hat))
     h_next = edf.Mul(o, edf.Tanh(c_next))
 
     return h_next, c_next
-
 
 def BuildModel():
 
@@ -70,17 +80,23 @@ def BuildModel():
 
     B = inp.value.shape[0]
     T = inp.value.shape[1]
-    h = edf.Value(np.zeros((B, hidden_dim)))
-    c = edf.Value(np.zeros((B, hidden_dim)))
+    h = [[None] * layer] * T
+    c = [[None] * layer] * T
 
+    for i in range(layer):
+        h[0][i] = edf.Value(np.zeros((B, hidden_dim)))
+        c[0][i] = edf.Value(np.zeros((B, hidden_dim)))
     score = []
 
     for t in range(T-1):
 
         wordvec = edf.Embed(edf.Value(inp.value[:,t]), C2V)
         xt = edf.Reshape(wordvec, [-1, hidden_dim])
-        h_next, c_next = LSTMCell(xt, h, c)
-        p = edf.SoftMax(edf.VDot(h_next, V))
+
+        for i in range(layer):
+            h[t+1][i], c[t+1][i] = LSTMCell(xt, h[t][i], c[t][i], i)
+            xt = h[t+1][i]
+        p = edf.SoftMax(edf.VDot(xt, V))
         logloss = edf.Reshape(edf.LogLoss(edf.Aref(p, edf.Value(inp.value[:,t+1]))), (B, 1))
 
         if t == 0:
@@ -89,8 +105,6 @@ def BuildModel():
             loss = edf.ConCat(loss, logloss)
 
         score.append(p)
-        h = h_next
-        c = c_next
 
     masks = np.zeros((B, T-1), dtype = np.int32)
     masks[inp.value[:,1:] != 0] = 1
@@ -125,8 +139,11 @@ def Predict(max_step, prefix):
     edf.components = []
 
     T = max_step
-    h = edf.Value(np.zeros((1, hidden_dim)))
-    c = edf.Value(np.zeros((1, hidden_dim)))
+    h = [[None] * layer] * (T + 1)
+    c = [[None] * layer] * (T + 1)
+    for i in range(layer):
+        h[0][i] = edf.Value(np.zeros((1, hidden_dim)))
+        c[0][i] = edf.Value(np.zeros((1, hidden_dim)))
 
     prediction = []
 
@@ -140,11 +157,11 @@ def Predict(max_step, prefix):
 
         wordvec = edf.Embed(pred, C2V)
         xt = edf.Reshape(wordvec, [-1, hidden_dim])
-        h_next,c_next = LSTMCell(xt, h, c)
-        p = edf.SoftMax(edf.VDot(h_next, V))
+        for i in range(layer):
+            h[t+1][i],c[t+1][i] = LSTMCell(xt, h[t][i], c[t][i], i)
+            xt = h[t+1][i]
+        p = edf.SoftMax(edf.VDot(xt, V))
         pred = edf.ArgMax(p)
-        h = h_next
-        c = c_next
 
     edf.Forward()
 
