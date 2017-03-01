@@ -67,8 +67,6 @@ if os.path.exists(model):
                 p.value = p_value[idx]
                 idx += 1
 
-
-
 def LSTMCell(xt, h, c, layer):
 
     f = edf.Sigmoid(edf.Add(edf.VDot(edf.ConCat(xt, h), Wf[layer]), bf[layer]))
