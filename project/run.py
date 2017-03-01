@@ -58,9 +58,15 @@ if os.path.exists(model):
     with open(model, 'rb') as f:
         p_value = pickle.load(f)
         idx = 0
-        for p in p_value:
-            parameters[idx].value = p
-            idx += 1
+        for p in parameters:
+            if isinstance(p, list):
+                for i in range(layer):
+                    p[i].value = p_value[idx]
+                    idx += 1
+            else:
+                p.value = p_value[idx]
+                idx += 1
+
 
 
 def LSTMCell(xt, h, c, layer):
