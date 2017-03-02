@@ -93,7 +93,8 @@ def BuildModel():
     
     masks = np.zeros((B, T-1), dtype = np.int32)
     masks[inp.value[:,1:] != 0] = 1
-    loss = edf.MeanwithMask(loss, edf.Value(masks)) 
+    #loss = edf.MeanwithMask(loss, edf.Value(masks)) 
+    loss = edf.Mean(loss)
     
     return loss, score
     
